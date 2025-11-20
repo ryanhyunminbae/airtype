@@ -182,8 +182,11 @@ const saveModelToDirectory = async (
         "utf8",
       );
 
+      let weightBytes = 0;
+
       if (weightData) {
         const weightBuffer = toNodeBuffer(weightData as WeightPayload);
+        weightBytes = weightBuffer.byteLength;
         await fs.writeFile(
           path.join(directory, "weights.bin"),
           weightBuffer,
@@ -200,7 +203,7 @@ const saveModelToDirectory = async (
           weightSpecsBytes: weightSpecs
             ? Buffer.byteLength(JSON.stringify(weightSpecs))
             : 0,
-          weightDataBytes: weightData ? weightData.byteLength : 0,
+          weightDataBytes: weightBytes,
         },
       };
     },

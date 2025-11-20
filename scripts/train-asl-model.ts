@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import * as tf from "@tensorflow/tfjs-node";
+import * as tf from "@tensorflow/tfjs";
 import {
   buildModelFeatures,
   MODEL_FEATURE_LENGTH,
@@ -81,12 +81,28 @@ const samplesToTensors = (samples: Sample[]) => {
   const ys = samples.map((sample) => encodeLabel(sample.label));
 
   const xsTensor = tf.tensor2d(xs, [xs.length, MODEL_FEATURE_LENGTH]);
-  const ysTensor = tf.oneHot(tf.tensor1d(ys, "int32"), LETTERS.length);
+  const ysTensor = createOneHotTensor(ys);
 
   return { xsTensor, ysTensor };
 };
 
+const createOneHotTensor = (labels: number[]) => {
+  const rows = labels.length;
+  const cols = LETTERS.length;
+  const buffer = new Float32Array(rows * cols);
+
+  labels.forEach((label, row) => {
+    if (label >= 0 && label < cols) {
+      buffer[row * cols + label] = 1;
+    }
+  });
+
+  return tf.tensor2d(buffer, [rows, cols]);
+};
+
 const main = async () => {
+  await tf.setBackend("cpu");
+  await tf.ready();
   const samples = await readDataset();
   if (samples.length < LETTERS.length * 5) {
     console.warn(
@@ -105,15 +121,18 @@ const main = async () => {
   const { xsTensor: valXs, ysTensor: valYs } = samplesToTensors(valSamples);
 
   const model = buildModel();
+  const tensorBoardCallback =
+    (tf as unknown as { node?: { tensorBoard?: (path: string) => tf.CustomCallback } })
+      .node?.tensorBoard?.("logs/asl-training") ?? null;
+
   await model.fit(trainXs, trainYs, {
     epochs: 80,
     batchSize: 64,
     validationData: [valXs, valYs],
-    callbacks: tf.node.tensorBoard("logs/asl-training"),
+    callbacks: tensorBoardCallback ? [tensorBoardCallback] : [],
   });
 
-  await fs.mkdir(OUTPUT_DIR, { recursive: true });
-  await model.save(`file://${OUTPUT_DIR}`);
+  await saveModelToDirectory(model, OUTPUT_DIR);
   console.log(
     `✅ Saved ASL classifier to ${OUTPUT_DIR}. Copy the folder to public/ if you trained elsewhere.`,
   );
@@ -128,4 +147,63 @@ main().catch((error) => {
   console.error("Training failed:", error);
   process.exit(1);
 });
+
+type ModelArtifacts = Parameters<tf.io.IOHandler["save"]>[0];
+
+const saveModelToDirectory = async (
+  model: tf.LayersModel,
+  directory: string,
+) => {
+  await fs.mkdir(directory, { recursive: true });
+  const handler: tf.io.IOHandler = {
+    save: async (artifacts: ModelArtifacts) => {
+      const { modelTopology, weightSpecs, weightData, format, generatedBy, convertedBy, trainingConfig, userDefinedMetadata, signature } = artifacts;
+
+      const modelJSON = {
+        format,
+        generatedBy,
+        convertedBy,
+        trainingConfig,
+        userDefinedMetadata,
+        signature,
+        modelTopology,
+        weightsManifest: [
+          {
+            paths: ["weights.bin"],
+            weights: weightSpecs ?? [],
+          },
+        ],
+      };
+
+      await fs.writeFile(
+        path.join(directory, "model.json"),
+        JSON.stringify(modelJSON, null, 2),
+        "utf8",
+      );
+
+      if (weightData) {
+        await fs.writeFile(
+          path.join(directory, "weights.bin"),
+          Buffer.from(weightData),
+        );
+      }
+
+      return {
+        modelArtifactsInfo: {
+          dateSaved: new Date(),
+          modelTopologyType: modelTopology ? "JSON" : "GraphDef",
+          modelTopologyBytes: modelTopology
+            ? Buffer.byteLength(JSON.stringify(modelTopology))
+            : 0,
+          weightSpecsBytes: weightSpecs
+            ? Buffer.byteLength(JSON.stringify(weightSpecs))
+            : 0,
+          weightDataBytes: weightData ? weightData.byteLength : 0,
+        },
+      };
+    },
+  };
+
+  await model.save(handler);
+};
 

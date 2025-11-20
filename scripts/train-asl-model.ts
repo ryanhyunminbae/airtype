@@ -148,8 +148,7 @@ main().catch((error) => {
   process.exit(1);
 });
 
-type ModelArtifacts = Parameters<tf.io.IOHandler["save"]>[0];
-
+type ModelArtifacts = tf.io.ModelArtifacts;
 const saveModelToDirectory = async (
   model: tf.LayersModel,
   directory: string,

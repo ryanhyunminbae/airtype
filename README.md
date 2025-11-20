@@ -36,13 +36,32 @@ npm start         # serve the production build
    - Text output buffers confirmed letters (predicted confidently for N consecutive frames) and offers clear/space/backspace controls.
 
 Main data flow:  
-**Webcam → MediaPipe (`detectHands`) → Gesture features + TensorFlow.js classifier → Prediction state → Letter wheel + stabilization logic → Text buffer + overlay.**
+**Webcam → MediaPipe (`detectHands`) → Gesture features + TensorFlow.js classifier → Prediction state → Letter wheel + stabilization logic → Textgit addguffer + overlay.**
 
 ## Extending the Prototype
 
 - Add more gestures by expanding `GESTURE_PROTOTYPES` in `lib/gestureClassifier.ts`, or swap in a trained tfjs model (see TODO in file).
 - Adjust confidence or stabilization thresholds (constants in `app/page.tsx`) to fine-tune typing latency vs. accuracy.
 - Swap the handcrafted feature extractor with embeddings produced by a lightweight neural network for better robustness.
+
+## Native App (Expo + React Native)
+
+An initial Expo project lives under `apps/airtype-native`. It currently mirrors the web UI (camera preview, letter wheel, stabilization meter, text buffer) while using simulated predictions as a placeholder for real on-device detection.
+
+```bash
+cd apps/airtype-native
+npm install        # already run during scaffold, repeat after pulling changes
+npm start          # choose iOS, Android, or web in Expo CLI
+```
+
+Key files:
+
+- `App.tsx` – native layout + stabilization logic
+- `src/components/CameraPreview.tsx` – wraps `expo-camera` and overlays landmarks
+- `src/hooks/useGesturePipeline.ts` – simulated predictions; replace with tfjs-react-native or MediaPipe Tasks when ready
+- `src/lib/*` – shared feature extractor + classifier scaffolding
+
+> TODO: add a real detector (e.g., `@tensorflow/tfjs-react-native` with `@tensorflow-models/hand-pose-detection`, or MediaPipe native Tasks) and load the trained `model.json` from bundled assets.
 
 ## Collecting ASL Samples
 

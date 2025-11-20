@@ -46,22 +46,29 @@ Main data flow:
 
 ## Native App (Expo + React Native)
 
-An initial Expo project lives under `apps/airtype-native`. It currently mirrors the web UI (camera preview, letter wheel, stabilization meter, text buffer) while using simulated predictions as a placeholder for real on-device detection.
+The `apps/airtype-native` workspace now ships a working on-device pipeline:
+
+- `expo-camera` captures front-facing frames.
+- `@tensorflow/tfjs-react-native` runs the MediaPipe HandPose model (tfjs runtime) every ~450ms.
+- Landmarks feed into the bundled ASL classifier (`assets/models/asl-letter-model/*`) using the same stabilization logic as web.
+- Gesture overlay, letter wheel, and typed text UI parity with the browser experience.
+
+### Setup
 
 ```bash
 cd apps/airtype-native
-npm install        # already run during scaffold, repeat after pulling changes
-npm start          # choose iOS, Android, or web in Expo CLI
+npm install --legacy-peer-deps    # tfjs-react-native requires legacy peer resolution
+npm start                         # Expo CLI → press i/a for iOS/Android
 ```
+
+If you retrain the ASL model, copy the new `model.json`/`weights.bin` into `apps/airtype-native/assets/models/asl-letter-model/` before launching the native app.
 
 Key files:
 
-- `App.tsx` – native layout + stabilization logic
-- `src/components/CameraPreview.tsx` – wraps `expo-camera` and overlays landmarks
-- `src/hooks/useGesturePipeline.ts` – simulated predictions; replace with tfjs-react-native or MediaPipe Tasks when ready
-- `src/lib/*` – shared feature extractor + classifier scaffolding
-
-> TODO: add a real detector (e.g., `@tensorflow/tfjs-react-native` with `@tensorflow-models/hand-pose-detection`, or MediaPipe native Tasks) and load the trained `model.json` from bundled assets.
+- `App.tsx` – layout + stabilization state
+- `src/hooks/useGesturePipeline.ts` – camera capture, tfjs initialization, landmark extraction, classifier invocation
+- `src/lib/gestureClassifier.ts` – switches between prototype and ASL model based on availability
+- `src/components/*` – camera preview, overlays, wheel, text buffer, stabilization meter
 
 ## Collecting ASL Samples
 

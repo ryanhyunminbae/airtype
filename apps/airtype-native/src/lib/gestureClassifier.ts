@@ -1,4 +1,9 @@
-import { computeHeuristicFeatures } from "./featureExtractor";
+import * as tf from "@tensorflow/tfjs";
+import {
+  buildModelFeatures,
+  computeHeuristicFeatures,
+  MODEL_FEATURE_LENGTH,
+} from "./featureExtractor";
 import type { HandLandmark, GesturePrediction } from "../types";
 
 const PROTOTYPE_FEATURES: Record<string, number[]> = {
@@ -11,9 +16,14 @@ const LETTERS = Object.keys(PROTOTYPE_FEATURES);
 
 export const classifyGesture = (
   landmarks: HandLandmark[] | null,
+  model?: tf.LayersModel | null,
 ): GesturePrediction | null => {
   if (!landmarks || landmarks.length < 21) {
     return null;
+  }
+
+  if (model) {
+    return classifyWithModel(landmarks, model);
   }
 
   const features = computeHeuristicFeatures(landmarks);
@@ -31,6 +41,28 @@ export const classifyGesture = (
     confidence,
     vector: features,
     source: "prototype",
+  };
+};
+
+const classifyWithModel = (
+  landmarks: HandLandmark[],
+  model: tf.LayersModel,
+): GesturePrediction | null => {
+  const features = buildModelFeatures(landmarks);
+  const distribution = tf.tidy(() => {
+    const input = tf.tensor2d([features], [1, MODEL_FEATURE_LENGTH]);
+    const logits = model.predict(input) as tf.Tensor2D;
+    return Array.from(logits.squeeze().dataSync());
+  });
+
+  const maxConfidence = Math.max(...distribution);
+  const index = distribution.indexOf(maxConfidence);
+
+  return {
+    letter: LETTERS[index] ?? null,
+    confidence: Number.isFinite(maxConfidence) ? maxConfidence : 0,
+    vector: features,
+    source: "asl-model",
   };
 };
 

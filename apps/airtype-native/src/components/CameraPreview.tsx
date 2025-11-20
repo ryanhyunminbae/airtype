@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect } from "react";
+import type { MutableRefObject } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { Camera, CameraType } from "expo-camera";
 import type { HandDetection } from "../types";
@@ -7,10 +8,10 @@ import GestureOverlay from "./GestureOverlay";
 type CameraPreviewProps = {
   detection: HandDetection | null;
   disabled?: boolean;
+  cameraRef: MutableRefObject<Camera | null>;
 };
 
-const CameraPreview = ({ detection, disabled }: CameraPreviewProps) => {
-  const cameraRef = useRef<Camera | null>(null);
+const CameraPreview = ({ detection, disabled, cameraRef }: CameraPreviewProps) => {
   const [permission, requestPermission] = Camera.useCameraPermissions();
 
   useEffect(() => {

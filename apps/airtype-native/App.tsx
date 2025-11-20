@@ -1,5 +1,6 @@
 import { StatusBar } from "expo-status-bar";
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { Camera } from "expo-camera";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -24,7 +25,8 @@ type Streak = {
 };
 
 export default function App() {
-  const { prediction, detection, isSimulated } = useGesturePipeline();
+  const cameraRef = useRef<Camera | null>(null);
+  const { prediction, detection, isSimulated } = useGesturePipeline(cameraRef);
   const [typedText, setTypedText] = useState("");
   const [streak, setStreak] = useState<Streak>({ letter: null, count: 0 });
 
@@ -38,11 +40,6 @@ export default function App() {
   const handleBackspace = useCallback(
     () => setTypedText((current) => current.slice(0, -1)),
     [],
-  );
-
-  const stabilizationProgress = useMemo(
-    () => Math.min(streak.count / FRAMES_TO_CONFIRM, 1),
-    [streak],
   );
 
   return (
@@ -60,7 +57,11 @@ export default function App() {
           <PipelineStatus isSimulated={isSimulated} />
         </View>
 
-        <CameraPreview detection={detection} disabled={false} />
+        <CameraPreview
+          detection={detection}
+          disabled={!prediction && !detection}
+          cameraRef={cameraRef}
+        />
 
         <View style={styles.grid}>
           <LetterWheel

@@ -9,8 +9,15 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.2.0",
+    "@tensorflow-models/hand-pose-detection": "^2.0.1",
+    "@tensorflow-models/handpose": "^0.1.0",
+    "@tensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs-react-native": "^1.0.0",
+    "base-64": "^1.0.0",
     "expo": "~54.0.25",
     "expo-camera": "~17.0.9",
+    "expo-file-system": "~19.0.19",
     "expo-gl": "~16.0.7",
     "expo-status-bar": "~3.0.8",
     "react": "19.1.0",

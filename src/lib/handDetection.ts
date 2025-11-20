@@ -5,7 +5,11 @@ import {
   type NormalizedLandmark,
 } from "@mediapipe/tasks-vision";
 
-export type Landmark = NormalizedLandmark & { z: number };
+export type Landmark = {
+  x: number;
+  y: number;
+  z: number;
+};
 
 export type BoundingBox = {
   xMin: number;

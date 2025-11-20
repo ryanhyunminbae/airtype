@@ -33,10 +33,12 @@ const TextOutput = ({
   );
 };
 
+type ControlVariant = "default" | "danger";
+
 type ControlButtonProps = {
   label: string;
   onClick: () => void;
-  variant?: "default" | "danger";
+  variant?: ControlVariant;
 };
 
 const ControlButton = ({
@@ -46,15 +48,20 @@ const ControlButton = ({
 }: ControlButtonProps) => {
   const baseClasses =
     "rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2";
-  const variants: Record<ControlButtonProps["variant"], string> = {
+  const variants: Record<ControlVariant, string> = {
     default:
       "bg-slate-900 text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200",
     danger:
       "bg-rose-500 text-white hover:bg-rose-400 focus-visible:outline-rose-500",
   };
+  const variantKey: ControlVariant = variant ?? "default";
 
   return (
-    <button type="button" className={`${baseClasses} ${variants[variant]}`} onClick={onClick}>
+    <button
+      type="button"
+      className={`${baseClasses} ${variants[variantKey]}`}
+      onClick={onClick}
+    >
       {label}
     </button>
   );

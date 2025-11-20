@@ -181,9 +181,12 @@ const saveModelToDirectory = async (
       );
 
       if (weightData) {
+        const arrayBuffer = ArrayBuffer.isView(weightData)
+          ? weightData.buffer
+          : weightData;
         await fs.writeFile(
           path.join(directory, "weights.bin"),
-          Buffer.from(weightData),
+          Buffer.from(arrayBuffer),
         );
       }
 

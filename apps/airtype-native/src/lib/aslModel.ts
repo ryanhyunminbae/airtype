@@ -1,12 +1,26 @@
 import * as tf from "@tensorflow/tfjs";
 import { bundleResourceIO } from "@tensorflow/tfjs-react-native";
+import { Asset } from "expo-asset";
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const MODEL_JSON = require("../../assets/models/asl-letter-model/model.json");
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const MODEL_WEIGHTS = require("../../assets/models/asl-letter-model/weights.bin");
+const MODEL_JSON = Asset.fromModule(
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require("../../assets/models/asl-letter-model/model.json"),
+);
+
+const MODEL_WEIGHTS = Asset.fromModule(
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require("../../assets/models/asl-letter-model/weights.bin"),
+);
 
 export const loadAslModel = async (): Promise<tf.LayersModel> => {
-  return tf.loadLayersModel(bundleResourceIO(MODEL_JSON, MODEL_WEIGHTS));
+  await MODEL_JSON.downloadAsync();
+  await MODEL_WEIGHTS.downloadAsync();
+
+  return tf.loadLayersModel(
+    bundleResourceIO(
+      MODEL_JSON.localUri ?? MODEL_JSON.uri,
+      MODEL_WEIGHTS.localUri ?? MODEL_WEIGHTS.uri,
+    ),
+  );
 };
 

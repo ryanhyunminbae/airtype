@@ -132,6 +132,24 @@ const DatasetRecorder = ({ detection }: DatasetRecorderProps) => {
     setStatus("Cleared in-memory samples.");
   };
 
+  const handleClearLetter = () => {
+    if (!samples.length) {
+      setStatus("No samples to clear.");
+      return;
+    }
+
+    const removed = samples.filter(
+      (sample) => sample.label === selectedLetter,
+    ).length;
+    if (removed === 0) {
+      setStatus(`No samples found for "${selectedLetter}".`);
+      return;
+    }
+
+    setSamples((prev) => prev.filter((sample) => sample.label !== selectedLetter));
+    setStatus(`Removed ${removed} sample(s) for "${selectedLetter}".`);
+  };
+
   const handleImport = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -221,6 +239,13 @@ const DatasetRecorder = ({ detection }: DatasetRecorderProps) => {
             onClick={handleDownload}
           >
             Export JSON
+          </button>
+          <button
+            type="button"
+            className="rounded-full border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-600 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-200 dark:hover:bg-amber-950/30"
+            onClick={handleClearLetter}
+          >
+            Clear current letter
           </button>
           <button
             type="button"

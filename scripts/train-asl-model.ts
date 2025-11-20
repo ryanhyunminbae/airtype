@@ -149,6 +149,8 @@ main().catch((error) => {
 });
 
 type ModelArtifacts = tf.io.ModelArtifacts;
+type WeightPayload = ArrayBuffer | ArrayBufferView | ArrayBuffer[];
+
 const saveModelToDirectory = async (
   model: tf.LayersModel,
   directory: string,
@@ -181,12 +183,10 @@ const saveModelToDirectory = async (
       );
 
       if (weightData) {
-        const arrayBuffer = ArrayBuffer.isView(weightData)
-          ? weightData.buffer
-          : weightData;
+        const weightBuffer = toNodeBuffer(weightData as WeightPayload);
         await fs.writeFile(
           path.join(directory, "weights.bin"),
-          Buffer.from(arrayBuffer),
+          weightBuffer,
         );
       }
 
@@ -207,5 +207,17 @@ const saveModelToDirectory = async (
   };
 
   await model.save(handler);
+};
+
+const toNodeBuffer = (data: WeightPayload): Buffer => {
+  if (Array.isArray(data)) {
+    return Buffer.concat(data.map((chunk) => toNodeBuffer(chunk)));
+  }
+
+  if (ArrayBuffer.isView(data)) {
+    return Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+  }
+
+  return Buffer.from(new Uint8Array(data));
 };
 

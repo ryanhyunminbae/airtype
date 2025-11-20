@@ -42,4 +42,3 @@ next-env.d.ts
 
 # local datasets / trained models
 data/asl_landmarks.json
-public/models/asl-letter-model/
